@@ -224,19 +224,27 @@
 
         // --- UI Rendering Functions ---
         const renderContent = () => {
-            if (!isAuthReady) return;
+            if (!isAuthReady) {
+                console.log("Authentication not ready. Skipping render.");
+                return;
+            }
             contentArea.innerHTML = '';
             
-            switch (currentPage) {
-                case 'home':
-                    renderHomePage();
-                    break;
-                case 'categories':
-                    renderCategoriesPage(currentType);
-                    break;
-                case 'browse-content':
-                    renderContentGrid(currentType, currentCategory);
-                    break;
+            try {
+                switch (currentPage) {
+                    case 'home':
+                        renderHomePage();
+                        break;
+                    case 'categories':
+                        renderCategoriesPage(currentType);
+                        break;
+                    case 'browse-content':
+                        renderContentGrid(currentType, currentCategory);
+                        break;
+                }
+            } catch (e) {
+                console.error("Failed to render content:", e);
+                contentArea.innerHTML = `<div class="text-center text-red-500 p-8">An error occurred. Please check the Developer Console for details.</div>`;
             }
         };
 
