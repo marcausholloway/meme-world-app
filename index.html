@@ -85,7 +85,7 @@
             </div>
             <div class="flex flex-col items-center">
                 <span class="text-xs text-gray-400">Your User ID:</span>
-                <span id="user-id" class="text-sm font-semibold text-gray-400 truncate max-w-full">Guest User</span>
+                <span id="user-id" class="text-sm font-semibold text-gray-400 truncate max-w-full">Loading...</span>
             </div>
             <div class="flex items-center gap-2">
                 <button id="upload-meme-button" class="flex items-center gap-2 p-3 text-sm font-medium text-white bg-green-500 rounded-full hover:bg-green-600 hover-effect">
@@ -171,50 +171,60 @@
         </div>
     </div>
     <div class="fixed bottom-4 right-4 text-xs text-gray-500 z-10">Created by Abdullah Al Numan</div>
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // IMPORTANT: Use the provided global variables for Firebase configuration.
+        // DO NOT change these lines.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // Setting log level to debug for development purposes
+        setLogLevel('debug');
+
         const contentArea = document.getElementById('content-area');
         const uploadModal = document.getElementById('upload-modal');
         const imageModal = document.getElementById('image-modal');
         const userIdDisplay = document.getElementById('user-id');
-
+        
         let currentPage = 'home';
         let currentType = null;
         let currentCategory = null;
-        let userId = 'local-user-' + Math.random().toString(36).substr(2, 9);
-        userIdDisplay.textContent = userId;
+        let userId = null;
 
-        // --- Data Storage (using localStorage) ---
-        const getLocalStorageData = () => {
-            const memes = JSON.parse(localStorage.getItem('memes')) || [];
-            const templates = JSON.parse(localStorage.getItem('templates')) || [];
-            return { memes, templates };
-        };
+        // --- Firebase Initialization and Auth ---
+        let isAuthReady = false;
 
-        const saveToLocalStorage = (type, data) => {
-            if (type === 'meme') {
-                localStorage.setItem('memes', JSON.stringify(data));
+        signInAnonymously(auth).then(() => {
+            console.log('Signed in anonymously');
+        }).catch((error) => {
+            console.error("Error signing in anonymously: ", error);
+        });
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                userId = user.uid;
+                userIdDisplay.textContent = userId;
             } else {
-                localStorage.setItem('templates', JSON.stringify(data));
+                userId = crypto.randomUUID();
+                userIdDisplay.textContent = "Guest User (no account)";
             }
-        };
+            isAuthReady = true;
+            renderContent();
+        });
 
-        const getContentData = (type) => {
-            const { memes, templates } = getLocalStorageData();
-            return type === 'meme' ? memes : templates;
-        };
-
-        const updateContentItem = (type, id, updates) => {
-            const data = getContentData(type);
-            const itemIndex = data.findIndex(item => item.id === id);
-            if (itemIndex !== -1) {
-                const updatedItem = { ...data[itemIndex], ...updates };
-                data[itemIndex] = updatedItem;
-                saveToLocalStorage(type, data);
-            }
-        };
 
         // --- UI Rendering Functions ---
         const renderContent = () => {
+            if (!isAuthReady) return;
             contentArea.innerHTML = '';
             
             switch (currentPage) {
@@ -295,7 +305,7 @@
                     <!-- Content will be injected here -->
                 </div>
             `;
-            fetchContent(type, category);
+            listenForContentChanges(type, category);
         };
 
         const showUploadModal = (type) => {
@@ -340,46 +350,57 @@
             imageModal.classList.add('hidden');
         };
 
-        // --- Local Storage Interaction Functions ---
-        const fetchContent = (type, category) => {
+        // --- Firebase Interaction Functions ---
+        const listenForContentChanges = (type, category) => {
             const grid = document.getElementById('grid-container');
-            const allContent = getContentData(type);
-            const filteredContent = allContent.filter(item => item.category === category);
-
-            if (filteredContent.length === 0) {
-                grid.innerHTML = '<div class="no-data-message">No content found in this category. Be the first to upload one!</div>';
-                return;
-            }
-
-            grid.innerHTML = filteredContent.map(item => `
-                <div class="masonry-item cursor-pointer" data-id="${item.id}" data-type="${item.type}">
-                    <img src="${item.imageDataUrl}" alt="Content" class="w-full h-auto rounded-t-xl" onerror="this.onerror=null;this.src='https://placehold.co/600x400/8b5cf6/ffffff?text=Image+Not+Found';" />
-                    <div class="p-4 flex justify-between items-center text-sm font-medium text-gray-400">
-                        <span class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                            <span>${Object.keys(item.reactions || {}).length}</span>
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline></svg>
-                            <span>${item.downloads || 0}</span>
-                        </span>
-                    </div>
-                </div>
-            `).join('');
-
-            document.querySelectorAll('.masonry-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const id = item.dataset.id;
-                    const type = item.dataset.type;
-                    const contentItem = getContentData(type).find(c => c.id === id);
-                    if (contentItem) {
-                        showImageModal(contentItem);
+            const collectionPath = `artifacts/${appId}/public/data/${type}s`;
+            const q = collection(db, collectionPath);
+            
+            onSnapshot(q, async (querySnapshot) => {
+                const filteredContent = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.category === category) {
+                        filteredContent.push({ id: doc.id, ...data });
                     }
+                });
+
+                if (filteredContent.length === 0) {
+                    grid.innerHTML = '<div class="no-data-message">No content found in this category. Be the first to upload one!</div>';
+                    return;
+                }
+
+                grid.innerHTML = filteredContent.map(item => `
+                    <div class="masonry-item cursor-pointer" data-id="${item.id}" data-type="${item.type}">
+                        <img src="${item.imageDataUrl}" alt="Content" class="w-full h-auto rounded-t-xl" onerror="this.onerror=null;this.src='https://placehold.co/600x400/8b5cf6/ffffff?text=Image+Not+Found';" />
+                        <div class="p-4 flex justify-between items-center text-sm font-medium text-gray-400">
+                            <span class="flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                                <span>${Object.keys(item.reactions || {}).length}</span>
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline></svg>
+                                <span>${item.downloads || 0}</span>
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+
+                document.querySelectorAll('.masonry-item').forEach(item => {
+                    item.addEventListener('click', async () => {
+                        const id = item.dataset.id;
+                        const type = item.dataset.type;
+                        const docRef = doc(db, `artifacts/${appId}/public/data/${type}s`, id);
+                        const docSnap = await getDoc(docRef);
+                        if (docSnap.exists()) {
+                            showImageModal({ id: docSnap.id, ...docSnap.data() });
+                        }
+                    });
                 });
             });
         };
 
-        const handleUpload = (event) => {
+        const handleUpload = async (event) => {
             event.preventDefault();
             const type = event.target.dataset.type;
             const fileInput = document.getElementById('image-file');
@@ -392,57 +413,69 @@
             }
 
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 const imageDataUrl = e.target.result;
                 const newItem = {
-                    id: crypto.randomUUID(),
                     type,
                     imageDataUrl,
                     category,
                     reactions: {},
                     downloads: 0
                 };
-                const data = getContentData(type);
-                data.push(newItem);
-                saveToLocalStorage(type, data);
-                
-                // Navigate to the correct page after successful upload
-                closeUploadModal();
-                currentType = type;
-                currentCategory = category;
-                currentPage = 'browse-content';
-                renderContent();
+                try {
+                    const collectionPath = `artifacts/${appId}/public/data/${type}s`;
+                    await addDoc(collection(db, collectionPath), newItem);
+                    console.log("Document successfully written!");
+                    
+                    closeUploadModal();
+                    currentType = type;
+                    currentCategory = category;
+                    currentPage = 'browse-content';
+                    renderContent();
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                }
             };
             reader.readAsDataURL(file);
         };
 
-        const handleReact = (id, shouldReact) => {
+        const handleReact = async (id, shouldReact) => {
             const type = document.getElementById('modal-type').textContent.toLowerCase();
-            const data = getContentData(type);
-            const item = data.find(item => item.id === id);
-            if (item) {
+            const docRef = doc(db, `artifacts/${appId}/public/data/${type}s`, id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                let reactions = data.reactions || {};
                 if (shouldReact) {
-                    item.reactions[userId] = true;
+                    reactions[userId] = true;
                 } else {
-                    delete item.reactions[userId];
+                    delete reactions[userId];
                 }
-                updateContentItem(type, id, { reactions: item.reactions });
-                showImageModal(item);
-                renderContent();
+                try {
+                    await updateDoc(docRef, { reactions });
+                    console.log("Reactions updated successfully!");
+                } catch (e) {
+                    console.error("Error updating reactions: ", e);
+                }
             }
         };
 
-        const handleDownload = (id) => {
+        const handleDownload = async (id) => {
             const type = document.getElementById('modal-type').textContent.toLowerCase();
-            const data = getContentData(type);
-            const item = data.find(item => item.id === id);
-            if (item) {
-                const updatedDownloads = (item.downloads || 0) + 1;
-                updateContentItem(type, id, { downloads: updatedDownloads });
-                showImageModal({ ...item, downloads: updatedDownloads });
-                renderContent();
+            const docRef = doc(db, `artifacts/${appId}/public/data/${type}s`, id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const updatedDownloads = (data.downloads || 0) + 1;
+                try {
+                    await updateDoc(docRef, { downloads: updatedDownloads });
+                    console.log("Downloads updated successfully!");
+                } catch (e) {
+                    console.error("Error updating downloads: ", e);
+                }
             }
         };
+
 
         // --- Event Listeners ---
         document.getElementById('home-button').addEventListener('click', () => {
@@ -470,8 +503,7 @@
             }
         });
 
-        // Initial render
-        renderContent();
+        // Initial render is now called after authentication state is determined
     </script>
 </body>
 </html>
