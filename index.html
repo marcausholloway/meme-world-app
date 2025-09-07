@@ -3,541 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meme & Template Hub</title>
+    <title>MeMe World</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #1e293b; /* Premium dark background color */
-            color: #e2e8f0; /* Light text for contrast */
-        }
-        /* Style for the new top navigation bar */
-        header {
             background-color: #0f172a;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            color: #e2e8f0;
+            margin: 0;
+            padding: 0;
         }
-        .masonry-grid {
-            column-count: 1;
-            column-gap: 1.5rem; /* Increased gap */
+        .page {
+            display: none;
         }
-        @media (min-width: 640px) {
-            .masonry-grid {
-                column-count: 2;
-            }
+        .active-page {
+            display: block;
         }
-        @media (min-width: 768px) {
-            .masonry-grid {
-                column-count: 3;
-            }
+        .nav-link {
+            transition: color 0.3s ease;
         }
-        @media (min-width: 1024px) {
-            .masonry-grid {
-                column-count: 4;
-            }
+        .nav-link:hover {
+            color: #a855f7;
         }
-        .masonry-item {
+        .card-effect {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-effect:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .arrow-effect {
+            transition: transform 0.3s ease;
+        }
+        .arrow-effect:hover {
+            transform: translateX(5px);
+        }
+        .folder-icon {
             display: inline-block;
-            width: 100%;
-            margin-bottom: 1.5rem; /* Increased margin */
-            border-radius: 0.75rem;
-            overflow: hidden;
-            background-color: #334155; /* Dark card background */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            transform: scale(1);
+            width: 2rem;
+            height: 2rem;
+            background-color: #6d28d9;
+            clip-path: polygon(0% 100%, 15% 100%, 15% 5%, 85% 5%, 85% 100%, 100% 100%, 100% 0%, 0% 0%);
         }
-        /* Hover effect for masonry cards */
-        .masonry-item:hover {
-            transform: scale(1.03);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        @keyframes pulse-once {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
-        .no-data-message {
-            text-align: center;
-            font-size: 1.25rem;
-            color: #94a3b8; /* Lighter text color */
-            padding: 2rem;
-        }
-        /* Hover effect for buttons */
-        .hover-effect {
-            transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
-        }
-        .hover-effect:hover {
-            transform: scale(1.05);
+        .pulse-once {
+            animation: pulse-once 0.5s ease-in-out;
         }
     </style>
 </head>
-<body class="flex flex-col min-h-screen">
-    <div id="app" class="flex-1 flex flex-col">
-        <!-- TOP NAVIGATION BAR -->
-        <header class="p-4 flex flex-col md:flex-row md:justify-between items-center gap-4">
-            <div class="flex items-center gap-4">
-                <button id="home-button" class="flex items-center gap-2 p-3 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 hover-effect">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    Home
-                </button>
-            </div>
-            <div class="flex flex-col items-center">
-                <span class="text-xs text-gray-400">Your User ID:</span>
-                <span id="user-id" class="text-sm font-semibold text-gray-400 truncate max-w-full">Connecting...</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <button id="upload-meme-button" class="flex items-center gap-2 p-3 text-sm font-medium text-white bg-green-500 rounded-full hover:bg-green-600 hover-effect">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    Upload Meme
-                </button>
-                <button id="upload-template-button" class="flex items-center gap-2 p-3 text-sm font-medium text-white bg-blue-500 rounded-full hover:bg-blue-600 hover-effect">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    Upload Template
-                </button>
-            </div>
-        </header>
+<body class="min-h-screen flex flex-col">
 
-        <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto p-4 md:p-8">
-            <div id="content-area"></div>
-        </main>
-
-        <!-- Modal for Upload -->
-        <div id="upload-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden flex justify-center items-center">
-            <div class="bg-gray-800 text-gray-200 rounded-xl p-8 w-11/12 md:w-1/2 lg:w-1/3 shadow-2xl">
-                <h2 id="modal-title" class="text-2xl font-bold mb-4">Upload Meme</h2>
-                <form id="upload-form" class="space-y-4">
-                    <div>
-                        <label for="image-file" class="block text-sm font-medium">Select Image</label>
-                        <input type="file" id="image-file" name="image-file" accept="image/*" class="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 shadow-sm p-2" required>
-                    </div>
-                    <div>
-                        <label for="category" class="block text-sm font-medium">Category</label>
-                        <select id="category" name="category" class="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 shadow-sm p-2" required>
-                            <option value="">Select a category</option>
-                            <option value="sad">Sad</option>
-                            <option value="happy">Happy</option>
-                            <option value="educational">Educational</option>
-                            <option value="surprised">Surprised</option>
-                            <option value="politics">Politics</option>
-                        </select>
-                    </div>
-                    <div class="flex justify-end gap-2">
-                        <button type="button" id="cancel-upload" class="px-4 py-2 text-sm font-medium text-gray-200 bg-gray-600 rounded-full hover:bg-gray-700 hover-effect">Cancel</button>
-                        <button type="submit" id="submit-upload" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 hover-effect">Upload</button>
-                    </div>
-                </form>
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 p-4 bg-slate-900 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">MeMe World</h1>
+            <div class="flex items-center space-x-4">
+                <button id="home-btn" class="nav-link text-lg text-gray-300 hover:text-purple-400 font-semibold transition-colors duration-300">Home</button>
             </div>
         </div>
+    </nav>
 
-        <!-- Modal for Image View and Reactions -->
-        <div id="image-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden flex justify-center items-center">
-            <div class="bg-gray-800 text-gray-200 rounded-xl p-6 w-11/12 md:w-2/3 lg:w-1/2 relative shadow-2xl">
-                <button id="close-image-modal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-200 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-                <div class="flex flex-col md:flex-row gap-4">
-                    <div class="flex-1">
-                        <img id="modal-image" src="" alt="Full size content" class="w-full h-auto rounded-lg shadow-md" />
-                    </div>
-                    <div class="flex-1 flex flex-col justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-400 mb-2">Category: <span id="modal-category" class="text-indigo-400 font-semibold"></span></p>
-                            <p class="text-sm font-medium text-gray-400 mb-4">Type: <span id="modal-type" class="text-indigo-400 font-semibold"></span></p>
-                        </div>
-                        <div class="flex flex-col gap-4">
-                            <div class="flex items-center gap-2 text-sm font-medium text-gray-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                                <span id="reaction-count">0 Reactions</span>
-                            </div>
-                            <div class="flex items-center gap-2 text-sm font-medium text-gray-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                <span id="download-count">0 Downloads</span>
-                            </div>
-                        </div>
-                        <div class="flex gap-2 mt-4">
-                            <button id="react-button" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-full hover:bg-red-600 hover-effect">
-                                <span id="react-button-text">React</span>
-                            </button>
-                            <a id="download-button" download class="flex-1 text-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700 hover-effect cursor-pointer">Download</a>
-                        </div>
-                    </div>
+    <!-- Main Content Area -->
+    <main class="container mx-auto mt-8 p-4 flex-grow">
+
+        <!-- Home Page -->
+        <div id="home-page" class="page active-page text-center">
+            <h2 class="text-4xl md:text-6xl font-extrabold text-white mb-12">Welcome to <span class="text-purple-400">MeMe World</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 max-w-4xl mx-auto">
+                <!-- Browse MEME Card -->
+                <div id="browse-meme-card" class="card-effect bg-slate-800 p-8 rounded-xl shadow-lg cursor-pointer flex flex-col items-center justify-center space-y-4">
+                    <svg class="w-16 h-16 text-purple-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2 6a2 2 0 012-2h5.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path><path d="M16 6.5l-3.5-3.5h-2L16 6.5z"></path></svg>
+                    <span class="text-2xl font-bold text-gray-200">Browse MEME</span>
+                </div>
+                <!-- Browse Templates Card -->
+                <div id="browse-templates-card" class="card-effect bg-slate-800 p-8 rounded-xl shadow-lg cursor-pointer flex flex-col items-center justify-center space-y-4">
+                    <svg class="w-16 h-16 text-purple-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2 6a2 2 0 012-2h5.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path><path d="M16 6.5l-3.5-3.5h-2L16 6.5z"></path></svg>
+                    <span class="text-2xl font-bold text-gray-200">Browse Templates</span>
                 </div>
             </div>
         </div>
-        <!-- Custom Message Box for Errors and Logs -->
-        <div id="message-box" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-700 text-gray-200 rounded-full px-6 py-3 text-sm shadow-xl hidden"></div>
-    </div>
-    
+
+        <!-- Categories Page -->
+        <div id="categories-page" class="page text-center">
+            <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-8">Choose a Category</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                <!-- Category Cards -->
+                <!-- The category links are dynamic and will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Gallery and Upload Page -->
+        <div id="gallery-page" class="page text-center">
+            <h2 id="gallery-title" class="text-4xl md:text-5xl font-extrabold text-white mb-8"></h2>
+
+            <!-- Upload Section -->
+            <div class="bg-slate-800 p-6 rounded-xl shadow-lg mb-8 max-w-xl mx-auto">
+                <h3 class="text-2xl font-bold text-white mb-4">Upload a Meme</h3>
+                <div class="flex flex-col items-center space-y-4">
+                    <input type="file" id="meme-upload" accept="image/*" class="w-full text-sm text-gray-400
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-purple-50 file:text-purple-700
+                        hover:file:bg-purple-100
+                        cursor-pointer
+                    ">
+                    <button id="upload-btn" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-full shadow-lg hover:bg-purple-700 transition-colors duration-300">
+                        Upload
+                    </button>
+                    <div id="upload-status" class="text-sm mt-2 text-yellow-400"></div>
+                </div>
+            </div>
+
+            <!-- Gallery Section -->
+            <div id="meme-gallery" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mt-8">
+                <!-- Memes will be loaded here -->
+            </div>
+        </div>
+    </main>
+
     <script type="module">
+        // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global variables provided by the environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // --- Firebase and UI state variables ---
-        let app;
-        let auth;
-        let db;
-        let userId;
+        let db, auth, userId;
+        let currentCategory = '';
 
-        let currentPage = 'home';
-        let currentType = null;
-        let currentCategory = null;
-        let currentUnsub = null; // Unsubscribe function for onSnapshot
-
-        // UI elements
-        const contentArea = document.getElementById('content-area');
-        const uploadModal = document.getElementById('upload-modal');
-        const imageModal = document.getElementById('image-modal');
-        const userIdDisplay = document.getElementById('user-id');
-        const messageBox = document.getElementById('message-box');
-        
-        // Custom message box function (replaces alert/confirm)
-        const showMessage = (message, duration = 3000) => {
-            messageBox.textContent = message;
-            messageBox.classList.remove('hidden');
-            setTimeout(() => {
-                messageBox.classList.add('hidden');
-            }, duration);
+        const pages = {
+            home: document.getElementById('home-page'),
+            categories: document.getElementById('categories-page'),
+            gallery: document.getElementById('gallery-page')
         };
+        const homeBtn = document.getElementById('home-btn');
+        const browseMemeCard = document.getElementById('browse-meme-card');
+        const browseTemplatesCard = document.getElementById('browse-templates-card');
+        const categoriesContainer = pages.categories.querySelector('div.grid');
+        const galleryTitle = document.getElementById('gallery-title');
+        const uploadStatus = document.getElementById('upload-status');
+        const memeGallery = document.getElementById('meme-gallery');
+        const uploadBtn = document.getElementById('upload-btn');
+        const memeUploadInput = document.getElementById('meme-upload');
 
-        // --- Firebase Initialization and Authentication ---
-        const initFirebase = async () => {
+        const categories = ['Sad', 'Happy', 'Angry', 'Surprised', 'Actors', 'Politics', 'Confused', 'Crying', 'Others'];
+        const mockImageUrls = [
+            'https://placehold.co/600x400/2dd4bf/ffffff?text=Meme+1',
+            'https://placehold.co/600x400/818cf8/ffffff?text=Meme+2',
+            'https://placehold.co/600x400/c084fc/ffffff?text=Meme+3',
+            'https://placehold.co/600x400/f472b6/ffffff?text=Meme+4',
+            'https://placehold.co/600x400/60a5fa/ffffff?text=Meme+5',
+            'https://placehold.co/600x400/f87171/ffffff?text=Meme+6',
+            'https://placehold.co/600x400/fbbf24/ffffff?text=Meme+7',
+            'https://placehold.co/600x400/a78bfa/ffffff?text=Meme+8',
+            'https://placehold.co/600x400/22d3ee/ffffff?text=Meme+9',
+        ];
+
+        // Function to show a specific page
+        function showPage(pageName) {
+            for (const key in pages) {
+                pages[key].classList.remove('active-page');
+            }
+            pages[pageName].classList.add('active-page');
+        }
+
+        // --- Firebase Initialization and Logic ---
+        async function initFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase config is missing. App cannot function without it.");
+                return;
+            }
+
             try {
-                if (!firebaseConfig) {
-                    showMessage("Error: Firebase configuration is missing.");
-                    return;
-                }
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
+                const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
-                setLogLevel('debug');
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        userIdDisplay.textContent = userId;
-                        showMessage("Successfully connected and signed in.");
-                        renderContent();
-                    } else {
-                        // Sign in anonymously if no token is available
-                        await signInAnonymously(auth);
-                    }
-                });
-
+                auth = getAuth(app);
+                
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
                     await signInAnonymously(auth);
                 }
+                
+                userId = auth.currentUser?.uid || crypto.randomUUID();
+                console.log("Firebase initialized and user authenticated with ID:", userId);
 
-            } catch (e) {
-                showMessage(`Firebase Error: ${e.message}`);
-                console.error("Firebase initialization failed:", e);
+                // Start listening for data
+                if (currentCategory) {
+                    loadImages(currentCategory);
+                }
+
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
             }
-        };
+        }
 
-        // --- UI Rendering Functions ---
-        const renderContent = () => {
-            contentArea.innerHTML = '';
-            
-            // Clear previous onSnapshot listener if it exists
-            if (currentUnsub) {
-                currentUnsub();
-                currentUnsub = null;
-            }
-
-            switch (currentPage) {
-                case 'home':
-                    renderHomePage();
-                    break;
-                case 'categories':
-                    renderCategoriesPage(currentType);
-                    break;
-                case 'browse-content':
-                    renderContentGrid(currentType, currentCategory);
-                    break;
-            }
-        };
-
-        const renderHomePage = () => {
-            contentArea.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                    <div id="browse-memes" class="flex flex-col items-center justify-center p-8 bg-slate-700 text-gray-200 rounded-2xl shadow-lg cursor-pointer hover:shadow-xl hover-effect">
-                        <div class="bg-indigo-100 rounded-full p-4 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                        </div>
-                        <h2 class="text-3xl font-bold">Browse Memes</h2>
-                    </div>
-                    <div id="browse-templates" class="flex flex-col items-center justify-center p-8 bg-slate-700 text-gray-200 rounded-2xl shadow-lg cursor-pointer hover:shadow-xl hover-effect">
-                        <div class="bg-purple-100 rounded-full p-4 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                        </div>
-                        <h2 class="text-3xl font-bold">Browse Templates</h2>
-                    </div>
-                </div>
-            `;
-            document.getElementById('browse-memes').addEventListener('click', () => {
-                currentPage = 'categories';
-                currentType = 'meme';
-                renderContent();
-            });
-            document.getElementById('browse-templates').addEventListener('click', () => {
-                currentPage = 'categories';
-                currentType = 'template';
-                renderContent();
-            });
-        };
-
-        const renderCategoriesPage = (type) => {
-            const categories = ['Sad', 'Happy', 'Educational', 'Surprised', 'Politics'];
-            const title = type.charAt(0).toUpperCase() + type.slice(1);
-            contentArea.innerHTML = `
-                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-200 mb-8 text-center">Browse ${title} Categories</h1>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
-                    ${categories.map(cat => `
-                        <button class="category-button w-full p-6 bg-slate-700 text-gray-200 rounded-xl shadow-lg flex justify-between items-center hover-effect" data-category="${cat.toLowerCase()}">
-                            <span class="text-xl font-semibold">${cat}</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-                    `).join('')}
-                </div>
-            `;
-            document.querySelectorAll('.category-button').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const category = e.currentTarget.dataset.category;
-                    currentPage = 'browse-content';
-                    currentCategory = category;
-                    renderContent();
-                });
-            });
-        };
-
-        const renderContentGrid = (type, category) => {
-            contentArea.innerHTML = `
-                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-200 mb-8 text-center">
-                    ${category.charAt(0).toUpperCase() + category.slice(1)} ${type.charAt(0).toUpperCase() + type.slice(1)}s
-                </h1>
-                <div id="grid-container" class="masonry-grid">
-                    <p class="text-center text-gray-400">Loading...</p>
-                </div>
-            `;
-            fetchContent(type, category);
-        };
-
-        // --- Modal Control Functions ---
-        const showUploadModal = (type) => {
-            document.getElementById('modal-title').textContent = `Upload ${type.charAt(0).toUpperCase() + type.slice(1)}`;
-            document.getElementById('upload-form').dataset.type = type;
-            uploadModal.classList.remove('hidden');
-        };
-
-        const closeUploadModal = () => {
-            document.getElementById('upload-form').reset();
-            uploadModal.classList.add('hidden');
-        };
-
-        const showImageModal = (content) => {
-            document.getElementById('modal-image').src = content.imageDataUrl;
-            document.getElementById('modal-image').onerror = () => document.getElementById('modal-image').src = 'https://placehold.co/600x400/8b5cf6/ffffff?text=Image+Not+Found';
-            document.getElementById('modal-category').textContent = content.category.charAt(0).toUpperCase() + content.category.slice(1);
-            document.getElementById('modal-type').textContent = content.type.charAt(0).toUpperCase() + content.type.slice(1);
-            
-            const reactionCount = Object.keys(content.reactions || {}).length;
-            document.getElementById('reaction-count').textContent = `${reactionCount} Reactions`;
-            document.getElementById('download-count').textContent = `${content.downloads || 0} Downloads`;
-            
-            const downloadButton = document.getElementById('download-button');
-            downloadButton.href = content.imageDataUrl;
-            downloadButton.download = `meme_hub_${content.id}.png`;
-
-            const reactButton = document.getElementById('react-button');
-            const hasReacted = content.reactions && content.reactions[userId];
-            reactButton.dataset.id = content.id;
-            reactButton.dataset.type = content.type;
-            reactButton.querySelector('span').textContent = hasReacted ? 'Unreact' : 'React';
-            reactButton.classList.toggle('bg-red-500', !hasReacted);
-            reactButton.classList.toggle('bg-gray-500', hasReacted);
-            reactButton.classList.toggle('hover:bg-red-600', !hasReacted);
-            reactButton.classList.toggle('hover:bg-gray-600', hasReacted);
-            
-            imageModal.classList.remove('hidden');
-        };
-
-        const closeImageModal = () => {
-            imageModal.classList.add('hidden');
-        };
-
-        // --- Firebase Database Interaction Functions ---
-        const fetchContent = (type, category) => {
-            const grid = document.getElementById('grid-container');
+        async function loadImages(category) {
             if (!db) {
-                grid.innerHTML = `<div class="no-data-message">Error: Database not initialized.</div>`;
+                console.error("Firestore is not initialized.");
                 return;
             }
 
-            const collectionPath = `/artifacts/${appId}/public/data/${type}s`;
-            const q = collection(db, collectionPath);
-            
-            currentUnsub = onSnapshot(q, (querySnapshot) => {
-                const filteredContent = [];
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if (data.category === category) {
-                        filteredContent.push({
-                            id: doc.id,
-                            ...data
-                        });
-                    }
-                });
+            memeGallery.innerHTML = '<div class="col-span-full text-center text-gray-400">Loading memes...</div>';
 
-                if (filteredContent.length === 0) {
-                    grid.innerHTML = '<div class="no-data-message">No content found in this category. Be the first to upload one!</div>';
+            const publicCollectionPath = `/artifacts/${appId}/public/data/memes_${category.toLowerCase()}`;
+            const q = collection(db, publicCollectionPath);
+
+            // Use onSnapshot to get real-time updates
+            onSnapshot(q, (snapshot) => {
+                memeGallery.innerHTML = ''; // Clear gallery
+                const memes = [];
+                if (snapshot.empty) {
+                    memeGallery.innerHTML = '<div class="col-span-full text-center text-gray-400 mt-8">No memes found. Be the first to upload one!</div>';
                     return;
                 }
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    memes.push({ id: doc.id, ...data });
+                });
+                
+                // Sort memes by creation date (if applicable)
+                memes.sort((a, b) => b.createdAt - a.createdAt);
 
-                grid.innerHTML = filteredContent.map(item => `
-                    <div class="masonry-item cursor-pointer" data-id="${item.id}" data-type="${item.type}">
-                        <img src="${item.imageDataUrl}" alt="Content" class="w-full h-auto rounded-t-xl" onerror="this.onerror=null;this.src='https://placehold.co/600x400/8b5cf6/ffffff?text=Image+Not+Found';" />
-                        <div class="p-4 flex justify-between items-center text-sm font-medium text-gray-400">
-                            <span class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                                <span>${Object.keys(item.reactions || {}).length}</span>
-                            </span>
-                            <span class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline></svg>
-                                <span>${item.downloads || 0}</span>
-                            </span>
+                memes.forEach(meme => {
+                    const memeDiv = document.createElement('div');
+                    memeDiv.classList.add('bg-slate-700', 'p-2', 'rounded-lg', 'shadow-md', 'overflow-hidden');
+                    memeDiv.innerHTML = `
+                        <img src="${meme.url}" alt="Meme by ${meme.uploaderId}" class="w-full h-auto rounded-md object-cover">
+                        <div class="mt-2 text-xs text-gray-400">
+                            <p>By: <span class="truncate inline-block max-w-[80px]">${meme.uploaderId}</span></p>
                         </div>
-                    </div>
-                `).join('');
-
-                document.querySelectorAll('.masonry-item').forEach(item => {
-                    item.addEventListener('click', () => {
-                        const id = item.dataset.id;
-                        const type = item.dataset.type;
-                        const contentItem = filteredContent.find(c => c.id === id);
-                        if (contentItem) {
-                            showImageModal(contentItem);
-                        }
+                        <div class="mt-2 flex justify-between items-center">
+                            <button class="download-btn bg-purple-500 text-white text-xs px-3 py-1 rounded-full hover:bg-purple-600 transition-colors duration-300">Download</button>
+                        </div>
+                    `;
+                    memeGallery.appendChild(memeDiv);
+                    memeDiv.querySelector('.download-btn').addEventListener('click', () => {
+                        window.open(meme.url, '_blank');
                     });
                 });
             }, (error) => {
-                showMessage(`Error fetching data: ${error.message}`);
-                console.error("Error fetching data:", error);
+                console.error("Error fetching documents:", error);
+                memeGallery.innerHTML = '<div class="col-span-full text-center text-red-500 mt-8">Failed to load memes. Please try again later.</div>';
             });
-        };
+        }
 
-        const handleUpload = async (event) => {
-            event.preventDefault();
-            const type = event.target.dataset.type;
-            const fileInput = document.getElementById('image-file');
-            const category = document.getElementById('category').value;
-            const file = fileInput.files[0];
-
+        async function uploadMeme(file, category) {
+            if (!db || !userId) {
+                uploadStatus.textContent = 'Error: Database not ready.';
+                return;
+            }
             if (!file) {
-                showMessage("No file selected.");
+                uploadStatus.textContent = 'Please select a file to upload.';
                 return;
             }
 
-            showMessage("Uploading...", 5000);
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const imageDataUrl = e.target.result;
-                const newItem = {
-                    type,
-                    imageDataUrl,
-                    category,
-                    reactions: {},
-                    downloads: 0
-                };
-                
-                try {
-                    const collectionPath = `/artifacts/${appId}/public/data/${type}s`;
-                    await addDoc(collection(db, collectionPath), newItem);
-                    showMessage("Upload successful!");
-                    closeUploadModal();
-                } catch (e) {
-                    showMessage(`Upload failed: ${e.message}`);
-                    console.error("Error uploading document:", e);
-                }
-            };
-            reader.readAsDataURL(file);
-        };
+            // In a real application, you would upload the file to Firebase Storage
+            // and get a download URL. For this example, we will use a mock image URL.
+            // A real implementation would look something like this:
+            // const storageRef = ref(storage, `memes/${category}/${file.name}`);
+            // await uploadBytes(storageRef, file);
+            // const imageUrl = await getDownloadURL(storageRef);
+            
+            const randomImageUrl = mockImageUrls[Math.floor(Math.random() * mockImageUrls.length)];
 
-        const handleReact = async (id, type, shouldReact) => {
-            if (!userId) {
-                showMessage("Please wait for user authentication.");
-                return;
-            }
             try {
-                const docRef = doc(db, `/artifacts/${appId}/public/data/${type}s`, id);
-                const update = shouldReact ? { [`reactions.${userId}`]: true } : { [`reactions.${userId}`]: false };
-                await updateDoc(docRef, update);
-                showMessage(shouldReact ? "Reacted successfully!" : "Unreacted successfully!");
-            } catch (e) {
-                showMessage(`Failed to react: ${e.message}`);
-                console.error("Error reacting:", e);
-            }
-        };
-
-        const handleDownload = async (id, type) => {
-            try {
-                const docRef = doc(db, `/artifacts/${appId}/public/data/${type}s`, id);
-                await updateDoc(docRef, {
-                    downloads: downloads + 1 // Note: This is not atomic for concurrent users
+                const publicCollectionPath = `/artifacts/${appId}/public/data/memes_${category.toLowerCase()}`;
+                const docRef = await addDoc(collection(db, publicCollectionPath), {
+                    url: randomImageUrl,
+                    uploaderId: userId,
+                    createdAt: Date.now()
                 });
-            } catch (e) {
-                showMessage(`Failed to update download count: ${e.message}`);
-                console.error("Error updating download count:", e);
-            }
-        };
+                uploadStatus.textContent = 'Upload successful!';
+                console.log("Document written with ID: ", docRef.id);
 
-        // --- Event Listeners ---
-        document.getElementById('home-button').addEventListener('click', () => {
-            currentPage = 'home';
-            currentType = null;
-            currentCategory = null;
-            renderContent();
-        });
-        document.getElementById('upload-meme-button').addEventListener('click', () => showUploadModal('meme'));
-        document.getElementById('upload-template-button').addEventListener('click', () => showUploadModal('template'));
-        document.getElementById('cancel-upload').addEventListener('click', closeUploadModal);
-        document.getElementById('upload-form').addEventListener('submit', handleUpload);
-        document.getElementById('close-image-modal').addEventListener('click', closeImageModal);
+            } catch (error) {
+                uploadStatus.textContent = 'Upload failed. See console for details.';
+                console.error("Error adding document: ", error);
+            }
+        }
+
+        // --- Event Listeners and Page Navigation ---
         
-        document.getElementById('react-button').addEventListener('click', (e) => {
-            const id = e.target.closest('button').dataset.id;
-            const type = e.target.closest('button').dataset.type;
-            const isReacted = e.target.closest('button').dataset.reacted === 'true';
-            handleReact(id, type, !isReacted);
+        homeBtn.addEventListener('click', () => showPage('home'));
+
+        browseMemeCard.addEventListener('click', () => {
+            populateCategories('meme');
+            showPage('categories');
         });
 
-        document.getElementById('download-button').addEventListener('click', (e) => {
-            const id = document.getElementById('react-button').dataset.id;
-            const type = document.getElementById('react-button').dataset.type;
-            handleDownload(id, type);
+        browseTemplatesCard.addEventListener('click', () => {
+            populateCategories('template');
+            showPage('categories');
         });
 
-        window.addEventListener('click', (event) => {
-            if (event.target === uploadModal) {
-                closeUploadModal();
-            }
-            if (event.target === imageModal) {
-                closeImageModal();
-            }
+        function populateCategories(type) {
+            categoriesContainer.innerHTML = '';
+            categories.forEach(category => {
+                const card = document.createElement('div');
+                card.classList.add('bg-slate-800', 'p-4', 'rounded-lg', 'shadow-md', 'cursor-pointer', 'flex', 'items-center', 'justify-between', 'card-effect');
+                card.innerHTML = `
+                    <span class="text-lg md:text-xl font-medium text-gray-200">${category}</span>
+                    <span class="arrow-effect text-purple-400 text-2xl font-bold">&rarr;</span>
+                `;
+                card.addEventListener('click', () => {
+                    galleryTitle.textContent = `${category} ${type === 'meme' ? 'Memes' : 'Templates'}`;
+                    currentCategory = category;
+                    showPage('gallery');
+                    loadImages(currentCategory);
+                });
+                categoriesContainer.appendChild(card);
+            });
+        }
+        
+        uploadBtn.addEventListener('click', () => {
+            const file = memeUploadInput.files[0];
+            uploadMeme(file, currentCategory);
         });
 
-        // Initial render
-        window.onload = () => {
-            initFirebase();
-            renderContent();
-        };
+        // Initialize Firebase on window load
+        window.onload = initFirebase;
     </script>
 </body>
 </html>
