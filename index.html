@@ -129,6 +129,11 @@
         </div>
     </main>
 
+    <!-- Footer -->
+    <footer class="p-4 mt-auto text-center text-gray-500 text-sm">
+        <p>Created by Abdulla Al Numan</p>
+    </footer>
+
     <script type="module">
         // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -205,9 +210,6 @@
                 isDatabaseReady = true;
                 uploadStatus.textContent = 'Database ready.';
                 console.log("Firebase initialized and user authenticated with ID:", userId);
-                
-                // Now that Firebase is ready, set up event listeners
-                setupEventListeners();
 
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
@@ -215,25 +217,32 @@
             }
         }
 
-        // Function to set up event listeners only after Firebase is initialized
-        function setupEventListeners() {
-            homeBtn.addEventListener('click', () => showPage('home'));
+        // --- Event Listeners and Page Navigation ---
+        // These are now outside the setupEventListeners function to be active immediately
+        homeBtn.addEventListener('click', () => showPage('home'));
 
-            browseMemeCard.addEventListener('click', () => {
-                populateCategories('meme');
-                showPage('categories');
-            });
+        browseMemeCard.addEventListener('click', () => {
+            if (!isDatabaseReady) {
+                uploadStatus.textContent = 'Database is not ready yet. Please wait a moment.';
+                return;
+            }
+            populateCategories('meme');
+            showPage('categories');
+        });
 
-            browseTemplatesCard.addEventListener('click', () => {
-                populateCategories('template');
-                showPage('categories');
-            });
+        browseTemplatesCard.addEventListener('click', () => {
+            if (!isDatabaseReady) {
+                uploadStatus.textContent = 'Database is not ready yet. Please wait a moment.';
+                return;
+            }
+            populateCategories('template');
+            showPage('categories');
+        });
 
-            uploadBtn.addEventListener('click', () => {
-                const file = memeUploadInput.files[0];
-                uploadMeme(file, currentCategory);
-            });
-        }
+        uploadBtn.addEventListener('click', () => {
+            const file = memeUploadInput.files[0];
+            uploadMeme(file, currentCategory);
+        });
 
         async function loadImages(category) {
             if (!isDatabaseReady) {
