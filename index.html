@@ -129,11 +129,6 @@
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="p-4 mt-auto text-center text-gray-500 text-sm">
-        <p>Created by Abdulla Al Numan</p>
-    </footer>
-
     <script type="module">
         // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -147,7 +142,6 @@
 
         let db, auth, userId;
         let currentCategory = '';
-        let isDatabaseReady = false;
 
         const pages = {
             home: document.getElementById('home-page'),
@@ -189,7 +183,6 @@
         async function initFirebase() {
             if (!firebaseConfig) {
                 console.error("Firebase config is missing. App cannot function without it.");
-                uploadStatus.textContent = 'Error: Missing Firebase configuration.';
                 return;
             }
             
@@ -207,9 +200,13 @@
                 }
                 
                 userId = auth.currentUser?.uid || crypto.randomUUID();
-                isDatabaseReady = true;
                 uploadStatus.textContent = 'Database ready.';
                 console.log("Firebase initialized and user authenticated with ID:", userId);
+
+                // Start listening for data
+                if (currentCategory) {
+                    loadImages(currentCategory);
+                }
 
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
@@ -217,36 +214,9 @@
             }
         }
 
-        // --- Event Listeners and Page Navigation ---
-        // These are now outside the setupEventListeners function to be active immediately
-        homeBtn.addEventListener('click', () => showPage('home'));
-
-        browseMemeCard.addEventListener('click', () => {
-            if (!isDatabaseReady) {
-                uploadStatus.textContent = 'Database is not ready yet. Please wait a moment.';
-                return;
-            }
-            populateCategories('meme');
-            showPage('categories');
-        });
-
-        browseTemplatesCard.addEventListener('click', () => {
-            if (!isDatabaseReady) {
-                uploadStatus.textContent = 'Database is not ready yet. Please wait a moment.';
-                return;
-            }
-            populateCategories('template');
-            showPage('categories');
-        });
-
-        uploadBtn.addEventListener('click', () => {
-            const file = memeUploadInput.files[0];
-            uploadMeme(file, currentCategory);
-        });
-
         async function loadImages(category) {
-            if (!isDatabaseReady) {
-                memeGallery.innerHTML = '<div class="col-span-full text-center text-red-500">Database not ready. Please wait a moment and try again.</div>';
+            if (!db) {
+                memeGallery.innerHTML = '<div class="col-span-full text-center text-red-500">Database not ready. Please refresh the page.</div>';
                 return;
             }
 
@@ -295,7 +265,7 @@
         }
 
         async function uploadMeme(file, category) {
-            if (!isDatabaseReady) {
+            if (!db) {
                 uploadStatus.textContent = 'Error: Database not ready. Please wait a moment and try again.';
                 return;
             }
@@ -324,6 +294,20 @@
             }
         }
 
+        // --- Event Listeners and Page Navigation ---
+        
+        homeBtn.addEventListener('click', () => showPage('home'));
+
+        browseMemeCard.addEventListener('click', () => {
+            populateCategories('meme');
+            showPage('categories');
+        });
+
+        browseTemplatesCard.addEventListener('click', () => {
+            populateCategories('template');
+            showPage('categories');
+        });
+
         function populateCategories(type) {
             categoriesContainer.innerHTML = '';
             categories.forEach(category => {
@@ -343,6 +327,11 @@
             });
         }
         
+        uploadBtn.addEventListener('click', () => {
+            const file = memeUploadInput.files[0];
+            uploadMeme(file, currentCategory);
+        });
+
         // Initialize Firebase on window load
         window.onload = initFirebase;
     </script>
