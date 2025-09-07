@@ -185,6 +185,8 @@
                 console.error("Firebase config is missing. App cannot function without it.");
                 return;
             }
+            
+            uploadStatus.textContent = 'Connecting to database...';
 
             try {
                 const app = initializeApp(firebaseConfig);
@@ -198,6 +200,7 @@
                 }
                 
                 userId = auth.currentUser?.uid || crypto.randomUUID();
+                uploadStatus.textContent = 'Database ready.';
                 console.log("Firebase initialized and user authenticated with ID:", userId);
 
                 // Start listening for data
@@ -207,12 +210,13 @@
 
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
+                uploadStatus.textContent = 'Failed to connect to database.';
             }
         }
 
         async function loadImages(category) {
             if (!db) {
-                console.error("Firestore is not initialized.");
+                memeGallery.innerHTML = '<div class="col-span-full text-center text-red-500">Database not ready. Please refresh the page.</div>';
                 return;
             }
 
@@ -261,8 +265,8 @@
         }
 
         async function uploadMeme(file, category) {
-            if (!db || !userId) {
-                uploadStatus.textContent = 'Error: Database not ready.';
+            if (!db) {
+                uploadStatus.textContent = 'Error: Database not ready. Please wait a moment and try again.';
                 return;
             }
             if (!file) {
@@ -270,12 +274,7 @@
                 return;
             }
 
-            // In a real application, you would upload the file to Firebase Storage
-            // and get a download URL. For this example, we will use a mock image URL.
-            // A real implementation would look something like this:
-            // const storageRef = ref(storage, `memes/${category}/${file.name}`);
-            // await uploadBytes(storageRef, file);
-            // const imageUrl = await getDownloadURL(storageRef);
+            uploadStatus.textContent = 'Uploading...';
             
             const randomImageUrl = mockImageUrls[Math.floor(Math.random() * mockImageUrls.length)];
 
