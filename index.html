@@ -140,8 +140,15 @@
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
+        // Cloudinary Configuration
+        // IMPORTANT: Replace with your actual Cloudinary credentials
+        const CLOUDINARY_CLOUD_NAME = 'dk82zi8h6';
+        const CLOUDINARY_UPLOAD_PRESET = 'meme_upload';
+        const CLOUDINARY_UPLOAD_URL = `CLOUDINARY_URL=cloudinary://<your_api_key>:<your_api_secret>@dk82zi8h6`;
+
         let db, auth, userId;
         let currentCategory = '';
+        let isDatabaseReady = false;
 
         const pages = {
             home: document.getElementById('home-page'),
@@ -159,17 +166,6 @@
         const memeUploadInput = document.getElementById('meme-upload');
 
         const categories = ['Sad', 'Happy', 'Angry', 'Surprised', 'Actors', 'Politics', 'Confused', 'Crying', 'Others'];
-        const mockImageUrls = [
-            'https://placehold.co/600x400/2dd4bf/ffffff?text=Meme+1',
-            'https://placehold.co/600x400/818cf8/ffffff?text=Meme+2',
-            'https://placehold.co/600x400/c084fc/ffffff?text=Meme+3',
-            'https://placehold.co/600x400/f472b6/ffffff?text=Meme+4',
-            'https://placehold.co/600x400/60a5fa/ffffff?text=Meme+5',
-            'https://placehold.co/600x400/f87171/ffffff?text=Meme+6',
-            'https://placehold.co/600x400/fbbf24/ffffff?text=Meme+7',
-            'https://placehold.co/600x400/a78bfa/ffffff?text=Meme+8',
-            'https://placehold.co/600x400/22d3ee/ffffff?text=Meme+9',
-        ];
 
         // Function to show a specific page
         function showPage(pageName) {
@@ -200,10 +196,11 @@
                 }
                 
                 userId = auth.currentUser?.uid || crypto.randomUUID();
+                isDatabaseReady = true; // Set database ready flag
                 uploadStatus.textContent = 'Database ready.';
                 console.log("Firebase initialized and user authenticated with ID:", userId);
 
-                // Start listening for data
+                // Start listening for data if a category is already selected
                 if (currentCategory) {
                     loadImages(currentCategory);
                 }
@@ -214,9 +211,59 @@
             }
         }
 
+        // --- Cloudinary Upload and Firestore Save ---
+        async function uploadMeme(file, category) {
+            if (!file) {
+                uploadStatus.textContent = 'Please select a file to upload.';
+                return;
+            }
+
+            uploadStatus.textContent = 'Uploading image to Cloudinary...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+            try {
+                const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Cloudinary upload failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const imageUrl = data.secure_url;
+                
+                uploadStatus.textContent = 'Image uploaded. Saving to database...';
+                
+                // Now save the image URL to Firestore
+                if (!isDatabaseReady) {
+                    uploadStatus.textContent = 'Error: Database not ready. Please wait a moment and try again.';
+                    return;
+                }
+
+                const publicCollectionPath = `/artifacts/${appId}/public/data/memes_${category.toLowerCase()}`;
+                const docRef = await addDoc(collection(db, publicCollectionPath), {
+                    url: imageUrl,
+                    uploaderId: userId,
+                    createdAt: Date.now()
+                });
+                
+                uploadStatus.textContent = 'Upload successful!';
+                console.log("Document written with ID: ", docRef.id);
+
+            } catch (error) {
+                uploadStatus.textContent = 'Upload failed. See console for details.';
+                console.error("Error during upload or Firestore save:", error);
+            }
+        }
+
         async function loadImages(category) {
-            if (!db) {
-                memeGallery.innerHTML = '<div class="col-span-full text-center text-red-500">Database not ready. Please refresh the page.</div>';
+            if (!isDatabaseReady) {
+                memeGallery.innerHTML = '<div class="col-span-full text-center text-red-500">Database not ready. Please wait a moment.</div>';
                 return;
             }
 
@@ -264,38 +311,7 @@
             });
         }
 
-        async function uploadMeme(file, category) {
-            if (!db) {
-                uploadStatus.textContent = 'Error: Database not ready. Please wait a moment and try again.';
-                return;
-            }
-            if (!file) {
-                uploadStatus.textContent = 'Please select a file to upload.';
-                return;
-            }
-
-            uploadStatus.textContent = 'Uploading...';
-            
-            const randomImageUrl = mockImageUrls[Math.floor(Math.random() * mockImageUrls.length)];
-
-            try {
-                const publicCollectionPath = `/artifacts/${appId}/public/data/memes_${category.toLowerCase()}`;
-                const docRef = await addDoc(collection(db, publicCollectionPath), {
-                    url: randomImageUrl,
-                    uploaderId: userId,
-                    createdAt: Date.now()
-                });
-                uploadStatus.textContent = 'Upload successful!';
-                console.log("Document written with ID: ", docRef.id);
-
-            } catch (error) {
-                uploadStatus.textContent = 'Upload failed. See console for details.';
-                console.error("Error adding document: ", error);
-            }
-        }
-
         // --- Event Listeners and Page Navigation ---
-        
         homeBtn.addEventListener('click', () => showPage('home'));
 
         browseMemeCard.addEventListener('click', () => {
