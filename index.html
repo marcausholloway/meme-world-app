@@ -144,7 +144,7 @@
         // IMPORTANT: Replace with your actual Cloudinary credentials
         const CLOUDINARY_CLOUD_NAME = 'dk82zi8h6';
         const CLOUDINARY_UPLOAD_PRESET = 'meme_upload';
-        const CLOUDINARY_UPLOAD_URL = `CLOUDINARY_URL=cloudinary://<your_api_key>:<your_api_secret>@dk82zi8h6`;
+        const CLOUDINARY_UPLOAD_URL = `CLOUDINARY_URL=cloudinary://<333385214944863>:<thDnSyKp_hWWvMlTceSeBVHFB1g>@dk82zi8h6`;
 
         let db, auth, userId;
         let currentCategory = '';
@@ -231,7 +231,12 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Cloudinary upload failed: ${response.statusText}`);
+                    // Try to get a specific error message from the Cloudinary API response
+                    let errorData = await response.json().catch(() => ({}));
+                    let errorMessage = errorData.error?.message || 'Unknown error. Check console for details.';
+                    
+                    // Throw a new error with a more specific message
+                    throw new Error(`Cloudinary upload failed: ${response.status} - ${errorMessage}`);
                 }
 
                 const data = await response.json();
@@ -256,7 +261,7 @@
                 console.log("Document written with ID: ", docRef.id);
 
             } catch (error) {
-                uploadStatus.textContent = 'Upload failed. See console for details.';
+                uploadStatus.textContent = `${error.message}`;
                 console.error("Error during upload or Firestore save:", error);
             }
         }
