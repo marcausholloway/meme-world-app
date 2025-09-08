@@ -142,9 +142,11 @@
 
         // Cloudinary Configuration
         // IMPORTANT: Replace with your actual Cloudinary credentials
+        // Check your Cloudinary Dashboard's "Account Details" to find your Cloud Name.
+        // It's a short string, not a URL.
         const CLOUDINARY_CLOUD_NAME = 'dk82zi8h6';
-        const CLOUDINARY_UPLOAD_PRESET = 'meme_upload';
-        const CLOUDINARY_UPLOAD_URL = `CLOUDINARY_URL=cloudinary://<333385214944863>:<thDnSyKp_hWWvMlTceSeBVHFB1g>@dk82zi8h6`;
+        const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
+        const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${dk82zi8h6}/image/upload`;
 
         let db, auth, userId;
         let currentCategory = '';
@@ -215,6 +217,12 @@
         async function uploadMeme(file, category) {
             if (!file) {
                 uploadStatus.textContent = 'Please select a file to upload.';
+                return;
+            }
+
+            // A more helpful message to the user if the Cloudinary credentials are not set
+            if (CLOUDINARY_CLOUD_NAME === 'your_cloudinary_cloud_name' || CLOUDINARY_UPLOAD_PRESET === 'your_cloudinary_upload_preset') {
+                uploadStatus.textContent = 'Error: Cloudinary credentials not set. Please update the CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET variables in the code.';
                 return;
             }
 
